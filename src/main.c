@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <libutility/utility.h>
 #include <libutility/console.h>
 #include "libobj.h"
 
@@ -40,21 +41,23 @@ typedef struct known_port {
 typedef struct {
     const char* input_filename;
     const char* output_filename;
-    const char* variable_name;
+    char* variable_name;
 } app_args_t;
 
 
 int main( int argc, char* argv[] )
 {
+	int status_code = 0;
     app_args_t args = {
-        .input_filename = NULL,
+        .input_filename  = NULL,
         .output_filename = NULL
     };
 
     if( argc < 2 )
     {
-        //about( argc, argv );
-        //return -1;
+        about( argc, argv );
+		status_code = -1;
+		goto done;
     }
     else
     {
@@ -83,12 +86,13 @@ int main( int argc, char* argv[] )
                 console_reset( stderr );
                 fprintf( stderr, "Unrecognized command line option '%s'\n", argv[arg] );
                 about( argc, argv );
-                return -2;
+				status_code = -2;
+				goto done;
             }
         }
     }
 
-    if( args.input_filename == NULL )
+    if( !args.input_filename )
     {
         console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
         fprintf( stderr, "ERROR: " );
@@ -96,10 +100,11 @@ int main( int argc, char* argv[] )
         fprintf( stderr, "Need to specify input OBJ file." );
         printf( "\n" );
         about( argc, argv );
-        return -3;
+		status_code = -3;
+		goto done;
     }
 
-    if( args.output_filename == NULL )
+    if( !args.output_filename )
     {
         console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
         fprintf( stderr, "ERROR: " );
@@ -107,8 +112,19 @@ int main( int argc, char* argv[] )
         fprintf( stderr, "Need to specify output JavaScript file." );
         printf( "\n" );
         about( argc, argv );
-        return -3;
+		status_code = -3;
+		goto done;
     }
+
+	if( !args.variable_name )
+	{
+		args.variable_name = strdup( file_basename( args.input_filename ) );
+		char* dot_char = strrchr( args.variable_name, '.' );
+		if( dot_char )
+		{
+			*dot_char = '\0';
+		}
+	}
 
 
     FILE* out = fopen( args.output_filename, "w" );
@@ -145,12 +161,12 @@ int main( int argc, char* argv[] )
             fprintf( out, "\t\t//%16s,%16s,%16s,%16s,%16s,%16s,%16s,%16s\n", "postion-X", "position-Y", "position-Z", "texture-U", "texture-V", "normal-X", "normal-Y", "normal-Z" );
             fprintf( out, "\t\t//----------------------------------------------------------------------------------------------------------------------------------------\n" );
 
-            size_t faces_count = obj_group_faces_count( group );
+            const size_t faces_count = obj_group_faces_count( group );
             for( size_t j = 0; j < faces_count; j++ )
             {
                 const obj_face_t* face = obj_group_faces( group, j );
 
-                size_t v_index_count = obj_face_vertex_indices_count( face );
+                const size_t v_index_count = obj_face_vertex_indices_count( face );
                 const size_t* v_indices = obj_face_vertex_indices( face );
                 const size_t* t_indices = obj_face_texture_coords_indices( face );
                 const size_t* n_indices = obj_face_normal_indices( face );
@@ -161,7 +177,6 @@ int main( int argc, char* argv[] )
                     const obj_texture_coord_t* t = &texture_coords[ t_indices[vi] ];
                     const obj_normal_t* n = &normals[ n_indices[vi] ];
 
-                    //fprintf( out, "\t\t/* vertex %zu */\n", j * 3 + vi );
 #if 0
                     fprintf( out, "\t\t%f,\n", v->x );
                     fprintf( out, "\t\t%f,\n", v->y );
@@ -173,24 +188,25 @@ int main( int argc, char* argv[] )
                     fprintf( out, "\t\t%f%s\n", n->nz, j != (faces_count - 1) ? "," : "" );
 #else
                     fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z, t->u, t->v, n->nx, n->ny, n->nz );
-                    fprintf( out, "%s\n", j != (faces_count - 1) ? "," : "" );
+                    //fprintf( out, "%s\n", j != (faces_count - 1) ? "," : "" );
+					bool is_last_vertex = j == (faces_count - 1) && vi == (v_index_count - 1);
+
+					fprintf( out, "%s\n", is_last_vertex ? "" : "," );
 #endif
                 }
             }
 
             fprintf( out, "\t]" );
-
             fprintf( out, "%s\n", i != (group_count - 1) ? "," : "" );
         }
         fprintf( out, "};\n" );
         fclose( out );
     }
 
-    return 0;
+done:
+	if( args.variable_name ) free( args.variable_name );
+    return status_code;
 }
-
-
-
 
 void about( int argc, char* argv[] )
 {

@@ -81,11 +81,9 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                 fgets( line, sizeof(line) - 1, file );
                 line[ sizeof(line) - 1 ] = '\0';
 
-
                 if( *line == '\0' ) continue; // skip empty lines...
 
                 char *token = strtok_r( line, " \n", &line_token_ctx );
-
                 if( !token ) continue;
                 obj_elem_t elem = obj_loader_element( token );
 
@@ -243,6 +241,8 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                         continue;
                     }
                 }
+
+                line[ 0 ] = '\0';
             }
         }
 
