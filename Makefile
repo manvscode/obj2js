@@ -1,5 +1,5 @@
-CFLAGS = -std=c99 -O0 -g -I /usr/local/include -I extern/include/
-#CFLAGS = -std=c99 -O2 -I /usr/local/include -I extern/include/
+#CFLAGS = -std=gnu11 -O0 -g -I /usr/local/include -I extern/include/
+CFLAGS = -std=gnu11 -O2 -I /usr/local/include -I extern/include/
 LDFLAGS = extern/lib/libutility.a extern/lib/libcollections.a -L /usr/local/lib -L extern/lib/ -L extern/libcollections/lib/
 CWD = $(shell pwd)
 BIN_NAME = obj2js

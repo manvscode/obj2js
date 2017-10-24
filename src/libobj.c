@@ -78,8 +78,19 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
 
             while( !feof(file) ) // read in the file...
             {
-                fgets( line, sizeof(line) - 1, file );
+                if( fgets( line, sizeof(line) - 1, file ) )
+                {
                 line[ sizeof(line) - 1 ] = '\0';
+                }
+                else if( feof(file) )
+                {
+                    break;
+                }
+                else
+                {
+                    fprintf( stderr, "Unable to read line.\n" );
+                    break;
+                }
 
                 if( *line == '\0' ) continue; // skip empty lines...
 
@@ -324,29 +335,29 @@ obj_elem_t obj_loader_element( const char *token )
 {
     obj_elem_t result = ELM_UNKNOWN;
 
-	if( strncmp( token, "vt", 2 ) == 0 )
+    if( strncmp( token, "vt", 2 ) == 0 )
     {
-		result = ELM_TEXTURECOORD;
+        result = ELM_TEXTURECOORD;
     }
-	else if( strncmp( token, "vn", 2 ) == 0 )
+    else if( strncmp( token, "vn", 2 ) == 0 )
     {
-		result = ELM_NORMAL;
+        result = ELM_NORMAL;
     }
-	else if( strncmp( token, "v", 1 ) == 0 )
+    else if( strncmp( token, "v", 1 ) == 0 )
     {
-		result = ELM_VERTEX;
+        result = ELM_VERTEX;
     }
-	else if( strncmp( token, "f", 1 ) == 0 )
+    else if( strncmp( token, "f", 1 ) == 0 )
     {
-		result = ELM_FACE;
+        result = ELM_FACE;
     }
-	else if( strncmp( token, "g", 1 ) == 0 )
+    else if( strncmp( token, "g", 1 ) == 0 )
     {
-		result = ELM_GROUP;
+        result = ELM_GROUP;
     }
-	else
+    else
     {
-		result = ELM_OTHER;
+        result = ELM_OTHER;
     }
 
     return result;

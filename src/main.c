@@ -31,13 +31,6 @@
 
 static void about( int argc, char* argv[] );
 
-typedef struct known_port {
-    unsigned short port;
-    unsigned short type; // 1 for tcp;
-    const char* desc;
-} known_port_t;
-
-
 typedef struct {
     const char* input_filename;
     const char* output_filename;
@@ -47,7 +40,7 @@ typedef struct {
 
 int main( int argc, char* argv[] )
 {
-	int status_code = 0;
+    int status_code = 0;
     app_args_t args = {
         .input_filename  = NULL,
         .output_filename = NULL
@@ -56,8 +49,8 @@ int main( int argc, char* argv[] )
     if( argc < 2 )
     {
         about( argc, argv );
-		status_code = -1;
-		goto done;
+        status_code = -1;
+        goto done;
     }
     else
     {
@@ -65,18 +58,54 @@ int main( int argc, char* argv[] )
         {
             if( strcmp( "-i", argv[arg] ) == 0 || strcmp( "--input", argv[arg] ) == 0 )
             {
-                args.input_filename = argv[ arg + 1 ];
-                arg++;
+                if( (arg + 1) < argc )
+                {
+                    args.input_filename = argv[ arg + 1 ];
+                    arg++;
+                }
+                else
+                {
+                    console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+                    fprintf( stderr, "ERROR: " );
+                    console_reset( stderr );
+                    fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+                    about( argc, argv );
+                    return -2;
+                }
             }
             else if( strcmp( "-o", argv[arg] ) == 0 || strcmp( "--output", argv[arg] ) == 0 )
             {
-                args.output_filename = argv[ arg + 1 ];
-                arg++;
+                if( (arg + 1) < argc )
+                {
+                    args.output_filename = argv[ arg + 1 ];
+                    arg++;
+                }
+                else
+                {
+                    console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+                    fprintf( stderr, "ERROR: " );
+                    console_reset( stderr );
+                    fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+                    about( argc, argv );
+                    return -2;
+                }
             }
             else if( strcmp( "-v", argv[arg] ) == 0 || strcmp( "--variable-name", argv[arg] ) == 0 )
             {
-                args.variable_name = argv[ arg + 1 ];
-                arg++;
+                if( (arg + 1) < argc )
+                {
+                    args.variable_name = argv[ arg + 1 ];
+                    arg++;
+                }
+                else
+                {
+                    console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+                    fprintf( stderr, "ERROR: " );
+                    console_reset( stderr );
+                    fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+                    about( argc, argv );
+                    return -2;
+                }
             }
             else
             {
@@ -86,8 +115,8 @@ int main( int argc, char* argv[] )
                 console_reset( stderr );
                 fprintf( stderr, "Unrecognized command line option '%s'\n", argv[arg] );
                 about( argc, argv );
-				status_code = -2;
-				goto done;
+                status_code = -2;
+                goto done;
             }
         }
     }
@@ -100,8 +129,8 @@ int main( int argc, char* argv[] )
         fprintf( stderr, "Need to specify input OBJ file." );
         printf( "\n" );
         about( argc, argv );
-		status_code = -3;
-		goto done;
+        status_code = -3;
+        goto done;
     }
 
     if( !args.output_filename )
@@ -112,19 +141,19 @@ int main( int argc, char* argv[] )
         fprintf( stderr, "Need to specify output JavaScript file." );
         printf( "\n" );
         about( argc, argv );
-		status_code = -3;
-		goto done;
+        status_code = -3;
+        goto done;
     }
 
-	if( !args.variable_name )
-	{
-		args.variable_name = strdup( file_basename( args.input_filename ) );
-		char* dot_char = strrchr( args.variable_name, '.' );
-		if( dot_char )
-		{
-			*dot_char = '\0';
-		}
-	}
+    if( !args.variable_name )
+    {
+        args.variable_name = string_dup( file_basename( args.input_filename ) );
+        char* dot_char = strrchr( args.variable_name, '.' );
+        if( dot_char )
+        {
+            *dot_char = '\0';
+        }
+    }
 
 
     FILE* out = fopen( args.output_filename, "w" );
@@ -189,9 +218,9 @@ int main( int argc, char* argv[] )
 #else
                     fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z, t->u, t->v, n->nx, n->ny, n->nz );
                     //fprintf( out, "%s\n", j != (faces_count - 1) ? "," : "" );
-					bool is_last_vertex = j == (faces_count - 1) && vi == (v_index_count - 1);
+                    bool is_last_vertex = j == (faces_count - 1) && vi == (v_index_count - 1);
 
-					fprintf( out, "%s\n", is_last_vertex ? "" : "," );
+                    fprintf( out, "%s\n", is_last_vertex ? "" : "," );
 #endif
                 }
             }
@@ -204,7 +233,7 @@ int main( int argc, char* argv[] )
     }
 
 done:
-	if( args.variable_name ) free( args.variable_name );
+    if( args.variable_name ) free( args.variable_name );
     return status_code;
 }
 
