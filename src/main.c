@@ -187,7 +187,7 @@ int main( int argc, char* argv[] )
             fprintf( out, "\t\"%s\": ", obj_group_name( group ) );
             fprintf( out, "[\n" );
 
-            fprintf( out, "\t\t//%16s,%16s,%16s,%16s,%16s,%16s,%16s,%16s\n", "postion-X", "position-Y", "position-Z", "texture-U", "texture-V", "normal-X", "normal-Y", "normal-Z" );
+            fprintf( out, "\t\t//%16s,%16s,%16s,%16s,%16s,%16s,%16s,%16s\n", "position-X", "position-Y", "position-Z", "texture-U", "texture-V", "normal-X", "normal-Y", "normal-Z" );
             fprintf( out, "\t\t//----------------------------------------------------------------------------------------------------------------------------------------\n" );
 
             const size_t faces_count = obj_group_faces_count( group );
