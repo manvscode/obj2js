@@ -94,7 +94,7 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
 
                 if( *line == '\0' ) continue; // skip empty lines...
 
-                char *token = strtok_r( line, " \n", &line_token_ctx );
+                char *token = string_tokenize_r( line, " \n", &line_token_ctx );
                 if( !token ) continue;
                 obj_elem_t elem = obj_loader_element( token );
 
@@ -104,13 +104,13 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                     {
                         obj_vertex_t v;
 
-                        char *token = strtok_r( NULL, " \n", &line_token_ctx );
+                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         v.x = atof( token );
 
-                        token = strtok_r( NULL, " \n", &line_token_ctx );
+                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         v.y = atof( token );
 
-                        token = strtok_r( NULL, " \n", &line_token_ctx );
+                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         v.z = atof( token );
 
                         lc_vector_push( ol->vertices, v );
@@ -120,13 +120,13 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                     {
                         obj_normal_t n;
 
-                        char *token = strtok_r( NULL, " \n", &line_token_ctx );
+                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         n.nx = atof( token );
 
-                        token = strtok_r( NULL, " \n", &line_token_ctx );
+                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         n.ny = atof( token );
 
-                        token = strtok_r( NULL, " \n", &line_token_ctx );
+                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         n.nz = atof( token );
 
                         lc_vector_push( ol->normals, n );
@@ -136,10 +136,10 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                     {
                         obj_texture_coord_t t;
 
-                        char *token = strtok_r( NULL, " \n", &line_token_ctx );
+                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         t.u = atof( token );
 
-                        token = strtok_r( NULL, " \n", &line_token_ctx );
+                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         t.v = atof( token );
 
                         lc_vector_push( ol->texture_coords, t );
@@ -147,7 +147,7 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                     }
                     case ELM_FACE:
                     {
-                        char *token = strtok_r( NULL, " \n", &line_token_ctx );
+                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
 
                         if( !current_group ) // check if there are no groups;
                         {
@@ -176,9 +176,9 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                         while( token != NULL )
                         {
                             char* part_token_ctx = NULL;
-                            char* v_index_str = strtok_r( token, "/", &part_token_ctx );
-                            char* t_index_str = strtok_r( NULL, "/", &part_token_ctx );
-                            char* n_index_str = strtok_r( NULL, "/", &part_token_ctx );
+                            char* v_index_str = string_tokenize_r( token, "/", &part_token_ctx );
+                            char* t_index_str = string_tokenize_r( NULL, "/", &part_token_ctx );
+                            char* n_index_str = string_tokenize_r( NULL, "/", &part_token_ctx );
 
                             size_t v_idx = atol( v_index_str );
                             size_t t_idx = atol( t_index_str );
@@ -190,7 +190,7 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                             lc_vector_push( face.t_indices, t_idx - 1 );
                             lc_vector_push( face.n_indices, n_idx - 1 );
 
-                            token = strtok_r( NULL, " \n", &line_token_ctx );
+                            token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         }
 
                         lc_vector_push( current_group->faces, face );
@@ -202,14 +202,14 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                         char name[512];
                         name[0] = '\0';
 
-                        char *token = strtok_r( NULL, " \n", &line_token_ctx );
+                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
 
                         // concatenate all tokens to form group name.
                         while( token != NULL )
                         {
                             strcat( name, token );
                             strcat( name, " " );
-                            token = strtok_r( NULL, " \n", &line_token_ctx );
+                            token = string_tokenize_r( NULL, " \n", &line_token_ctx );
                         }
 
                         name[ strlen(name) - 1 ] = '\0'; // remove last space char
