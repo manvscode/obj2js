@@ -27,7 +27,7 @@
 #include <libutility/console.h>
 #include "libobj.h"
 
-#define VERSION "1.0"
+#define VERSION "1.1"
 
 static void about( int argc, char* argv[] );
 
