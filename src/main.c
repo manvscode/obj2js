@@ -31,223 +31,272 @@
 
 static void about( int argc, char* argv[] );
 
+#define INCLUDE_TEXTURES  (1 << 0)
+#define INCLUDE_NORMALS   (1 << 1)
+
 typedef struct {
-    const char* input_filename;
-    const char* output_filename;
-    char* variable_name;
+	const char* input_filename;
+	const char* output_filename;
+	char* variable_name;
+	int include;
 } app_args_t;
 
 
 int main( int argc, char* argv[] )
 {
-    int status_code = 0;
-    app_args_t args = {
-        .input_filename  = NULL,
-        .output_filename = NULL
-    };
+	int status_code = 0;
+	app_args_t args = {
+		.input_filename  = NULL,
+		.output_filename = NULL,
+		.include = INCLUDE_TEXTURES | INCLUDE_NORMALS
+	};
 
-    if( argc < 2 )
-    {
-        about( argc, argv );
-        status_code = -1;
-        goto done;
-    }
-    else
-    {
-        for( int arg = 1; arg < argc; arg++ )
-        {
-            if( strcmp( "-i", argv[arg] ) == 0 || strcmp( "--input", argv[arg] ) == 0 )
-            {
-                if( (arg + 1) < argc )
-                {
-                    args.input_filename = argv[ arg + 1 ];
-                    arg++;
-                }
-                else
-                {
-                    console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
-                    fprintf( stderr, "ERROR: " );
-                    console_reset( stderr );
-                    fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
-                    about( argc, argv );
-                    return -2;
-                }
-            }
-            else if( strcmp( "-o", argv[arg] ) == 0 || strcmp( "--output", argv[arg] ) == 0 )
-            {
-                if( (arg + 1) < argc )
-                {
-                    args.output_filename = argv[ arg + 1 ];
-                    arg++;
-                }
-                else
-                {
-                    console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
-                    fprintf( stderr, "ERROR: " );
-                    console_reset( stderr );
-                    fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
-                    about( argc, argv );
-                    return -2;
-                }
-            }
-            else if( strcmp( "-v", argv[arg] ) == 0 || strcmp( "--variable-name", argv[arg] ) == 0 )
-            {
-                if( (arg + 1) < argc )
-                {
-                    args.variable_name = argv[ arg + 1 ];
-                    arg++;
-                }
-                else
-                {
-                    console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
-                    fprintf( stderr, "ERROR: " );
-                    console_reset( stderr );
-                    fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
-                    about( argc, argv );
-                    return -2;
-                }
-            }
-            else
-            {
-                console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
-                printf( "\n" );
-                fprintf( stderr, "ERROR: " );
-                console_reset( stderr );
-                fprintf( stderr, "Unrecognized command line option '%s'\n", argv[arg] );
-                about( argc, argv );
-                status_code = -2;
-                goto done;
-            }
-        }
-    }
+	if( argc < 2 )
+	{
+		about( argc, argv );
+		status_code = -1;
+		goto done;
+	}
+	else
+	{
+		for( int arg = 1; arg < argc; arg++ )
+		{
+			if( strcmp( "-i", argv[arg] ) == 0 || strcmp( "--input", argv[arg] ) == 0 )
+			{
+				if( (arg + 1) < argc )
+				{
+					args.input_filename = argv[ arg + 1 ];
+					arg++;
+				}
+				else
+				{
+					console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+					fprintf( stderr, "ERROR: " );
+					console_reset( stderr );
+					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+					about( argc, argv );
+					return -2;
+				}
+			}
+			else if( strcmp( "-o", argv[arg] ) == 0 || strcmp( "--output", argv[arg] ) == 0 )
+			{
+				if( (arg + 1) < argc )
+				{
+					args.output_filename = argv[ arg + 1 ];
+					arg++;
+				}
+				else
+				{
+					console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+					fprintf( stderr, "ERROR: " );
+					console_reset( stderr );
+					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+					about( argc, argv );
+					return -2;
+				}
+			}
+			else if( strcmp( "-v", argv[arg] ) == 0 || strcmp( "--variable-name", argv[arg] ) == 0 )
+			{
+				if( (arg + 1) < argc )
+				{
+					args.variable_name = string_dup(argv[ arg + 1 ]);
+					arg++;
+				}
+				else
+				{
+					console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+					fprintf( stderr, "ERROR: " );
+					console_reset( stderr );
+					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+					about( argc, argv );
+					return -2;
+				}
+			}
+			else if( strcmp( "-xt", argv[arg] ) == 0 || strcmp( "--exclude-textures", argv[arg] ) == 0 )
+			{
+				args.include &= ~INCLUDE_TEXTURES;
+			}
+			else if( strcmp( "-xn", argv[arg] ) == 0 || strcmp( "--exclude-normals", argv[arg] ) == 0 )
+			{
+				args.include &= ~INCLUDE_NORMALS;
+			}
+			else if( strcmp( "-h", argv[arg] ) == 0 || strcmp( "--help", argv[arg] ) == 0 )
+			{
+				about( argc, argv );
+				goto done;
+			}
+			else
+			{
+				console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+				printf( "\n" );
+				fprintf( stderr, "ERROR: " );
+				console_reset( stderr );
+				fprintf( stderr, "Unrecognized command line option '%s'\n", argv[arg] );
+				about( argc, argv );
+				status_code = -2;
+				goto done;
+			}
+		}
+	}
 
-    if( !args.input_filename )
-    {
-        console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
-        fprintf( stderr, "ERROR: " );
-        console_reset( stderr );
-        fprintf( stderr, "Need to specify input OBJ file." );
-        printf( "\n" );
-        about( argc, argv );
-        status_code = -3;
-        goto done;
-    }
+	if( !args.input_filename )
+	{
+		console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+		fprintf( stderr, "ERROR: " );
+		console_reset( stderr );
+		fprintf( stderr, "Need to specify input OBJ file." );
+		printf( "\n" );
+		about( argc, argv );
+		status_code = -3;
+		goto done;
+	}
 
-    if( !args.output_filename )
-    {
-        console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
-        fprintf( stderr, "ERROR: " );
-        console_reset( stderr );
-        fprintf( stderr, "Need to specify output JavaScript file." );
-        printf( "\n" );
-        about( argc, argv );
-        status_code = -3;
-        goto done;
-    }
+	if( !args.output_filename )
+	{
+		console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+		fprintf( stderr, "ERROR: " );
+		console_reset( stderr );
+		fprintf( stderr, "Need to specify output JavaScript file." );
+		printf( "\n" );
+		about( argc, argv );
+		status_code = -3;
+		goto done;
+	}
 
-    if( !args.variable_name )
-    {
-        args.variable_name = string_dup( file_basename( args.input_filename ) );
-        char* dot_char = strrchr( args.variable_name, '.' );
-        if( dot_char )
-        {
-            *dot_char = '\0';
-        }
-    }
+	if( !args.variable_name )
+	{
+		args.variable_name = string_dup( file_basename( args.input_filename ) );
+		char* dot_char = strrchr( args.variable_name, '.' );
+		if( dot_char )
+		{
+			*dot_char = '\0';
+		}
+	}
+
+	FILE* out = fopen( args.output_filename, "w" );
+
+	if( out )
+	{
+		obj_loader_t* ol = obj_loader_create_from_file( args.input_filename, false );
+
+		fprintf( out, "/* var vertex = {\n" );
+		fprintf( out, " *   x,\n" );
+		fprintf( out, " *   y,\n" );
+		fprintf( out, " *   z,\n" );
+		if( args.include & INCLUDE_TEXTURES )
+		{
+			fprintf( out, " *   u,\n" );
+			fprintf( out, " *   v,\n" );
+		}
+		if( args.include & INCLUDE_NORMALS )
+		{
+			fprintf( out, " *   nx,\n" );
+			fprintf( out, " *   ny,\n" );
+			fprintf( out, " *   nz,\n" );
+		}
+		fprintf( out, " * };\n" );
+		fprintf( out, " */\n" );
+		fprintf( out, "var %s = {\n", args.variable_name );
 
 
-    FILE* out = fopen( args.output_filename, "w" );
-    if( out )
-    {
-        obj_loader_t* ol = obj_loader_create_from_file( args.input_filename, false );
-
-        fprintf( out, "/* var vertex = {\n" );
-        fprintf( out, " *   x,\n" );
-        fprintf( out, " *   y,\n" );
-        fprintf( out, " *   z,\n" );
-        fprintf( out, " *   u,\n" );
-        fprintf( out, " *   v,\n" );
-        fprintf( out, " *   nx,\n" );
-        fprintf( out, " *   ny,\n" );
-        fprintf( out, " *   nz,\n" );
-        fprintf( out, " * };\n" );
-        fprintf( out, " */\n" );
-        fprintf( out, "var %s = {\n", args.variable_name );
+		const obj_vertex_t* vertices = obj_loader_vertices( ol );
+		const obj_texture_coord_t* texture_coords = obj_loader_texture_coords( ol );
+		const obj_normal_t* normals = obj_loader_normals( ol );
 
 
-        const obj_vertex_t* vertices = obj_loader_vertices( ol );
-        const obj_texture_coord_t* texture_coords = obj_loader_texture_coords( ol );
-        const obj_normal_t* normals = obj_loader_normals( ol );
+		const size_t group_count = obj_loader_group_count( ol );
+		for( size_t i = 0; i < group_count; i++ )
+		{
+			const obj_group_t* group = obj_loader_group_at( ol, i );
+			fprintf( out, "\t\"%s\": ", obj_group_name( group ) );
+			fprintf( out, "[\n" );
 
+			fprintf( out, "\t\t//%16s,%16s,%16s", "position-X", "position-Y", "position-Z");
+			int divider_length = 50 + 8;
 
-        const size_t group_count = obj_loader_group_count( ol );
-        for( size_t i = 0; i < group_count; i++ )
-        {
-            const obj_group_t* group = obj_loader_group_at( ol, i );
-            fprintf( out, "\t\"%s\": ", obj_group_name( group ) );
-            fprintf( out, "[\n" );
+			if( args.include & INCLUDE_TEXTURES )
+			{
+				fprintf( out, ",%16s,%16s", "texture-U", "texture-V");
+				divider_length += 34;
+			}
+			if( args.include & INCLUDE_NORMALS )
+			{
+				fprintf( out, ",%16s,%16s,%16s\n", "normal-X", "normal-Y", "normal-Z" );
+				divider_length += 50;
+			}
+			fprintf(out, "\n");
 
-            fprintf( out, "\t\t//%16s,%16s,%16s,%16s,%16s,%16s,%16s,%16s\n", "position-X", "position-Y", "position-Z", "texture-U", "texture-V", "normal-X", "normal-Y", "normal-Z" );
-            fprintf( out, "\t\t//----------------------------------------------------------------------------------------------------------------------------------------\n" );
+			fprintf( out, "\t\t//");
+			while( divider_length-- > 0 )
+			{
+				fprintf(out, "-");
+			}
+			fprintf(out, "\n");
 
-            const size_t faces_count = obj_group_faces_count( group );
-            for( size_t j = 0; j < faces_count; j++ )
-            {
-                const obj_face_t* face = obj_group_faces( group, j );
+			const size_t faces_count = obj_group_faces_count( group );
+			for( size_t j = 0; j < faces_count; j++ )
+			{
+				const obj_face_t* face = obj_group_faces( group, j );
 
-                const size_t v_index_count = obj_face_vertex_indices_count( face );
-                const size_t* v_indices = obj_face_vertex_indices( face );
-                const size_t* t_indices = obj_face_texture_coords_indices( face );
-                const size_t* n_indices = obj_face_normal_indices( face );
+				const size_t v_index_count = obj_face_vertex_indices_count( face );
+				const size_t* v_indices = obj_face_vertex_indices( face );
+				const size_t* t_indices = obj_face_texture_coords_indices( face );
+				const size_t* n_indices = obj_face_normal_indices( face );
 
-                for( size_t vi = 0; vi < v_index_count; vi++ )
-                {
-                    const obj_vertex_t* v = &vertices[ v_indices[vi] ];
-                    const obj_texture_coord_t* t = &texture_coords[ t_indices[vi] ];
-                    const obj_normal_t* n = &normals[ n_indices[vi] ];
+				for( size_t vi = 0; vi < v_index_count; vi++ )
+				{
+					const obj_vertex_t* v = &vertices[ v_indices[vi] ];
+					const obj_texture_coord_t* t = &texture_coords[ t_indices[vi] ];
+					const obj_normal_t* n = &normals[ n_indices[vi] ];
 
-#if 0
-                    fprintf( out, "\t\t%f,\n", v->x );
-                    fprintf( out, "\t\t%f,\n", v->y );
-                    fprintf( out, "\t\t%f,\n", v->z );
-                    fprintf( out, "\t\t%f,\n", t->u );
-                    fprintf( out, "\t\t%f,\n", t->v );
-                    fprintf( out, "\t\t%f,\n", n->nx );
-                    fprintf( out, "\t\t%f,\n", n->ny );
-                    fprintf( out, "\t\t%f%s\n", n->nz, j != (faces_count - 1) ? "," : "" );
-#else
-                    fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z, t->u, t->v, n->nx, n->ny, n->nz );
-                    //fprintf( out, "%s\n", j != (faces_count - 1) ? "," : "" );
-                    bool is_last_vertex = j == (faces_count - 1) && vi == (v_index_count - 1);
+					fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z );
 
-                    fprintf( out, "%s\n", is_last_vertex ? "" : "," );
-#endif
-                }
-            }
+					if( args.include & INCLUDE_TEXTURES )
+					{
+						fprintf( out, ",%+16.10f,%+16.10f", t->u, t->v);
+					}
 
-            fprintf( out, "\t]" );
-            fprintf( out, "%s\n", i != (group_count - 1) ? "," : "" );
-        }
-        fprintf( out, "};\n" );
-        fclose( out );
-    }
+					if( args.include & INCLUDE_NORMALS )
+					{
+						fprintf( out, ",%+16.10f,%+16.10f,%+16.10f", n->nx, n->ny, n->nz );
+					}
+
+					bool is_last_vertex = j == (faces_count - 1) && vi == (v_index_count - 1);
+					fprintf( out, "%s\n", is_last_vertex ? "" : "," );
+				}
+			}
+
+			fprintf( out, "\t]" );
+			fprintf( out, "%s\n", i != (group_count - 1) ? "," : "" );
+		}
+		fprintf( out, "};\n" );
+		fclose( out );
+	}
 
 done:
-    if( args.variable_name ) free( args.variable_name );
-    return status_code;
+	if( args.variable_name ) free( args.variable_name );
+	return status_code;
 }
 
 void about( int argc, char* argv[] )
 {
-    printf( "obj2js v%s\n", VERSION );
-    printf( "Copyright (c) 2016, Joe Marrero.\n\n");
+	printf( "obj2js v%s\n", VERSION );
+	printf( "Copyright (c) 2016, Joe Marrero.\n\n");
 
-    printf( "Usage:\n" );
-    printf( "    %s -i <obj-file> -o <javascript-file>\n\n", argv[0] );
+	printf( "This tool will convert an Alias Wavefront OBJ model into Javascript\n" );
+	printf( "arrays that are suitable for loading directly with WebGL.\n\n");
 
-    printf( "Command Line Options:\n" );
-    printf( "    %-2s, %-12s   %-50s\n", "-i", "--input", "The input OBJ file." );
-    printf( "    %-2s, %-12s   %-50s\n", "-o", "--output", "The output Javascript file." );
-    printf( "    %-2s, %-12s   %-50s\n", "-v", "--variable-name", "The variable name for the JavaScript object." );
-    printf( "\n" );
+	printf( "Usage:\n" );
+	printf( "    %s -i <obj-file> -o <javascript-file>\n\n", argv[0] );
+
+	printf( "Command Line Options:\n" );
+	printf( "    %3s, %-20s  %-50s\n", "-i", "--input", "The input OBJ file." );
+	printf( "    %3s, %-20s  %-50s\n", "-o", "--output", "The output Javascript file." );
+	printf( "    %3s, %-20s  %-50s\n", "-v", "--variable-name", "The variable name for the JavaScript object." );
+	printf( "    %3s, %-20s  %-50s\n", "-xt", "--exclude-textures", "Exclude parsing of textures." );
+	printf( "    %3s, %-20s  %-50s\n", "-xn", "--exclude-normals", "Exclude parsing of normals." );
+	printf( "    %3s, %-20s  %-50s\n", "-h", "--help", "Show program usage." );
+
+
+	printf( "\n" );
 }

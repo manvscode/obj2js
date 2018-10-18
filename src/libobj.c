@@ -51,6 +51,7 @@ struct obj_group {
 };
 
 struct obj_loader {
+	bool verbose;
     obj_group_t* groups;
     obj_vertex_t* vertices;
     obj_texture_coord_t* texture_coords;
@@ -58,6 +59,164 @@ struct obj_loader {
 };
 
 static obj_elem_t obj_loader_element( const char *token );
+
+#define DELIMETERS  " \n"
+#define WHITESPACE  " \t\r\n"
+
+static void obj_loader_parse_vertex( obj_loader_t* ol, bool verbose, char** line_token_ctx )
+{
+	obj_vertex_t v;
+
+	char *token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	v.x = atof( token );
+
+	token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	v.y = atof( token );
+
+	token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	v.z = atof( token );
+
+	lc_vector_push( ol->vertices, v );
+}
+
+static void obj_loader_parse_normal( obj_loader_t* ol, bool verbose, char** line_token_ctx )
+{
+	obj_normal_t n;
+
+	char *token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	n.nx = atof( token );
+
+	token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	n.ny = atof( token );
+
+	token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	n.nz = atof( token );
+
+	lc_vector_push( ol->normals, n );
+}
+
+static void obj_loader_parse_texture_coord( obj_loader_t* ol, bool verbose, char** line_token_ctx )
+{
+	obj_texture_coord_t t;
+
+	char *token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	t.u = atof( token );
+
+	token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	t.v = atof( token );
+
+	lc_vector_push( ol->texture_coords, t );
+}
+
+static void obj_loader_parse_face( obj_loader_t* ol, bool verbose, char** line_token_ctx, obj_group_t** current_group )
+{
+	char *token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+
+	if( *current_group == NULL ) // check if there are no groups;
+	{
+		if( verbose )
+		{
+			printf( "[OBJLoader] No group defined yet, so I am adding a default group.\n" );
+		}
+
+		obj_group_t g;
+		g.name = "default";
+
+		lc_vector_push( ol->groups, g );
+		*current_group = &lc_vector_last( ol->groups );
+	}
+
+	obj_face_t face = {
+		.v_indices = NULL,
+		.t_indices = NULL,
+		.n_indices = NULL
+	};
+
+	lc_vector_create( face.v_indices, 3 );
+	lc_vector_create( face.t_indices, 3 );
+	lc_vector_create( face.n_indices, 3 );
+
+	while( token != NULL )
+	{
+		char* part_token_ctx = NULL;
+		char* v_index_str = string_tokenize_r( token, "/", &part_token_ctx );
+		char* t_index_str = string_tokenize_r( NULL, "/", &part_token_ctx );
+		char* n_index_str = string_tokenize_r( NULL, "/", &part_token_ctx );
+
+		if( v_index_str && *v_index_str != '\0')
+		{
+			string_trim( v_index_str, WHITESPACE );
+			size_t v_idx = atol( v_index_str );
+			// We subtract 1 because the OBJ format counts from 1 (instead of 0)
+			lc_vector_push( face.v_indices, v_idx - 1 );
+		}
+
+		if( t_index_str && *t_index_str != '\0')
+		{
+			string_trim( t_index_str, WHITESPACE );
+			size_t t_idx = atol( t_index_str );
+			// We subtract 1 because the OBJ format counts from 1 (instead of 0)
+			lc_vector_push( face.t_indices, t_idx - 1 );
+		}
+		if( n_index_str && *n_index_str != '\0')
+		{
+			string_trim( n_index_str, WHITESPACE );
+			size_t n_idx = atol( n_index_str );
+			// We subtract 1 because the OBJ format counts from 1 (instead of 0)
+			lc_vector_push( face.n_indices, n_idx - 1 );
+		}
+
+		token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	}
+
+	lc_vector_push( (*current_group)->faces, face );
+}
+
+static void obj_loader_parse_group( obj_loader_t* ol, bool verbose, char** line_token_ctx, obj_group_t** current_group )
+{
+	// BUG BUG: Need to ensure that we never exceed 512 bytes.
+	char name[512];
+	name[0] = '\0';
+
+	char *token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+
+	// concatenate all tokens to form group name.
+	while( token != NULL )
+	{
+		strcat( name, token );
+		strcat( name, " " );
+		token = string_tokenize_r( NULL, DELIMETERS, line_token_ctx );
+	}
+
+	name[ strlen(name) - 1 ] = '\0'; // remove last space char
+
+	if( strcmp(name, "default") != 0 )
+	{
+		bool is_new_group = true;
+
+		for( size_t i = 0; is_new_group && i < lc_vector_size(ol->groups); i++ )
+		{
+			const obj_group_t* g = &ol->groups[ i ];
+
+			if( strcmp(g->name, name) == 0 )
+			{
+				is_new_group = false;
+			}
+		}
+
+		if( is_new_group )
+		{
+			// Create a new group and add it...
+			obj_group_t g;
+			g.name = string_dup( name );
+			g.faces = NULL;
+
+			lc_vector_create( g.faces, 1 );
+			lc_vector_push( ol->groups, g );
+		}
+		*current_group = &lc_vector_last( ol->groups );
+	}
+}
 
 obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
 {
@@ -68,7 +227,7 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
 
     if( file )
     {
-        ol = obj_loader_create();
+        ol = obj_loader_create( );
         obj_group_t* current_group = NULL;
 
         if( ol )
@@ -80,7 +239,7 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
             {
                 if( fgets( line, sizeof(line) - 1, file ) )
                 {
-                line[ sizeof(line) - 1 ] = '\0';
+                	line[ sizeof(line) - 1 ] = '\0';
                 }
                 else if( feof(file) )
                 {
@@ -92,9 +251,11 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                     break;
                 }
 
+				string_trim( line, WHITESPACE );
+
                 if( *line == '\0' ) continue; // skip empty lines...
 
-                char *token = string_tokenize_r( line, " \n", &line_token_ctx );
+                char *token = string_tokenize_r( line, DELIMETERS, &line_token_ctx );
                 if( !token ) continue;
                 obj_elem_t elem = obj_loader_element( token );
 
@@ -102,144 +263,27 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
                 {
                     case ELM_VERTEX:
                     {
-                        obj_vertex_t v;
-
-                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        v.x = atof( token );
-
-                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        v.y = atof( token );
-
-                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        v.z = atof( token );
-
-                        lc_vector_push( ol->vertices, v );
+						obj_loader_parse_vertex( ol, verbose, &line_token_ctx );
                         break;
                     }
                     case ELM_NORMAL:
                     {
-                        obj_normal_t n;
-
-                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        n.nx = atof( token );
-
-                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        n.ny = atof( token );
-
-                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        n.nz = atof( token );
-
-                        lc_vector_push( ol->normals, n );
+						obj_loader_parse_normal( ol, verbose, &line_token_ctx );
                         break;
                     }
                     case ELM_TEXTURECOORD:
                     {
-                        obj_texture_coord_t t;
-
-                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        t.u = atof( token );
-
-                        token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        t.v = atof( token );
-
-                        lc_vector_push( ol->texture_coords, t );
+						obj_loader_parse_texture_coord( ol, verbose, &line_token_ctx );
                         break;
                     }
                     case ELM_FACE:
                     {
-                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-
-                        if( !current_group ) // check if there are no groups;
-                        {
-                            if( verbose )
-                            {
-                                printf( "[OBJLoader] No group defined yet, so I am adding a default group.\n" );
-                            }
-
-                            obj_group_t g;
-                            g.name = "default";
-
-                            lc_vector_push( ol->groups, g );
-                            current_group = &lc_vector_last( ol->groups );
-                        }
-
-                        obj_face_t face = {
-                            .v_indices = NULL,
-                            .t_indices = NULL,
-                            .n_indices = NULL
-                        };
-
-                        lc_vector_create( face.v_indices, 3 );
-                        lc_vector_create( face.t_indices, 3 );
-                        lc_vector_create( face.n_indices, 3 );
-
-                        while( token != NULL )
-                        {
-                            char* part_token_ctx = NULL;
-                            char* v_index_str = string_tokenize_r( token, "/", &part_token_ctx );
-                            char* t_index_str = string_tokenize_r( NULL, "/", &part_token_ctx );
-                            char* n_index_str = string_tokenize_r( NULL, "/", &part_token_ctx );
-
-                            size_t v_idx = atol( v_index_str );
-                            size_t t_idx = atol( t_index_str );
-                            size_t n_idx = atol( n_index_str );
-
-
-                            // We subtract 1 because the OBJ format counts from 1 (instead of 0)
-                            lc_vector_push( face.v_indices, v_idx - 1 );
-                            lc_vector_push( face.t_indices, t_idx - 1 );
-                            lc_vector_push( face.n_indices, n_idx - 1 );
-
-                            token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        }
-
-                        lc_vector_push( current_group->faces, face );
+						obj_loader_parse_face( ol, verbose, &line_token_ctx, &current_group );
                         break;
                     }
                     case ELM_GROUP:
                     {
-                        // BUG BUG: Need to ensure that we never exceed 512 bytes.
-                        char name[512];
-                        name[0] = '\0';
-
-                        char *token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-
-                        // concatenate all tokens to form group name.
-                        while( token != NULL )
-                        {
-                            strcat( name, token );
-                            strcat( name, " " );
-                            token = string_tokenize_r( NULL, " \n", &line_token_ctx );
-                        }
-
-                        name[ strlen(name) - 1 ] = '\0'; // remove last space char
-
-                        if( strcmp(name, "default") != 0 )
-                        {
-                            bool is_new_group = true;
-
-                            for( size_t i = 0; is_new_group && i < lc_vector_size(ol->groups); i++ )
-                            {
-                                const obj_group_t* g = &ol->groups[ i ];
-
-                                if( strcmp(g->name, name) == 0 )
-                                {
-                                    is_new_group = false;
-                                }
-                            }
-
-                            if( is_new_group )
-                            {
-                                // Create a new group and add it...
-                                obj_group_t g;
-                                g.name = strdup( name );
-                                g.faces = NULL;
-
-                                lc_vector_create( g.faces, 1 );
-                                lc_vector_push( ol->groups, g );
-                            }
-                            current_group = &lc_vector_last( ol->groups );
-                        }
+						obj_loader_parse_group( ol, verbose, &line_token_ctx, &current_group );
                         break;
                     }
                     case ELM_OTHER:
@@ -262,7 +306,6 @@ obj_loader_t* obj_loader_create_from_file( const char *filename, bool verbose )
 
     return ol;
 }
-
 
 obj_loader_t* obj_loader_create( void )
 {
