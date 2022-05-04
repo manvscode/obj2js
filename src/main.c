@@ -23,9 +23,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <libutility/utility.h>
-#include <libutility/console.h>
-#include "libobj.h"
+#include <xtd/filesystem.h>
+#include <xtd/string.h>
+#include <xtd/console.h>
+#include <libobj.h>
 
 #define VERSION "1.1"
 
@@ -70,7 +71,7 @@ int main( int argc, char* argv[] )
 				}
 				else
 				{
-					console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+					console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
 					fprintf( stderr, "ERROR: " );
 					console_reset( stderr );
 					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
@@ -87,7 +88,7 @@ int main( int argc, char* argv[] )
 				}
 				else
 				{
-					console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+					console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
 					fprintf( stderr, "ERROR: " );
 					console_reset( stderr );
 					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
@@ -104,7 +105,7 @@ int main( int argc, char* argv[] )
 				}
 				else
 				{
-					console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+					console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
 					fprintf( stderr, "ERROR: " );
 					console_reset( stderr );
 					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
@@ -127,7 +128,7 @@ int main( int argc, char* argv[] )
 			}
 			else
 			{
-				console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+				console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
 				printf( "\n" );
 				fprintf( stderr, "ERROR: " );
 				console_reset( stderr );
@@ -141,7 +142,7 @@ int main( int argc, char* argv[] )
 
 	if( !args.input_filename )
 	{
-		console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+		console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
 		fprintf( stderr, "ERROR: " );
 		console_reset( stderr );
 		fprintf( stderr, "Need to specify input OBJ file." );
@@ -153,7 +154,7 @@ int main( int argc, char* argv[] )
 
 	if( !args.output_filename )
 	{
-		console_fg_color_256( stderr, CONSOLE_COLOR256_RED );
+		console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
 		fprintf( stderr, "ERROR: " );
 		console_reset( stderr );
 		fprintf( stderr, "Need to specify output JavaScript file." );
