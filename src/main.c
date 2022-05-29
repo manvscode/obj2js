@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 by Joseph A. Marrero. http://www.manvscode.com/
+ * Copyright (C) 2016-2022 by Joseph A. Marrero. https://joemarrero.com/
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,16 +21,18 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <errno.h>
+#include <xtd/console.h>
 #include <xtd/filesystem.h>
 #include <xtd/string.h>
-#include <xtd/console.h>
 #include <libobj.h>
 
-#define VERSION "1.1"
+#define VERSION "1.2.0"
 
 static void about( int argc, char* argv[] );
+static void print_error(const char* format, ...);
 
 #define INCLUDE_TEXTURES  (1 << 0)
 #define INCLUDE_NORMALS   (1 << 1)
@@ -71,10 +73,7 @@ int main( int argc, char* argv[] )
 				}
 				else
 				{
-					console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
-					fprintf( stderr, "ERROR: " );
-					console_reset( stderr );
-					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+					print_error( "Missing required parameter for '%s' operation.\n", argv[arg] );
 					about( argc, argv );
 					return -2;
 				}
@@ -88,10 +87,7 @@ int main( int argc, char* argv[] )
 				}
 				else
 				{
-					console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
-					fprintf( stderr, "ERROR: " );
-					console_reset( stderr );
-					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+					print_error( "Missing required parameter for '%s' operation.\n", argv[arg] );
 					about( argc, argv );
 					return -2;
 				}
@@ -105,10 +101,7 @@ int main( int argc, char* argv[] )
 				}
 				else
 				{
-					console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
-					fprintf( stderr, "ERROR: " );
-					console_reset( stderr );
-					fprintf( stderr, "Missing required parameter for '%s' operation.\n", argv[arg] );
+					print_error( "Missing required parameter for '%s' operation.\n", argv[arg] );
 					about( argc, argv );
 					return -2;
 				}
@@ -128,11 +121,7 @@ int main( int argc, char* argv[] )
 			}
 			else
 			{
-				console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
-				printf( "\n" );
-				fprintf( stderr, "ERROR: " );
-				console_reset( stderr );
-				fprintf( stderr, "Unrecognized command line option '%s'\n", argv[arg] );
+				print_error( "Unrecognized command line option '%s'\n", argv[arg] );
 				about( argc, argv );
 				status_code = -2;
 				goto done;
@@ -142,11 +131,7 @@ int main( int argc, char* argv[] )
 
 	if( !args.input_filename )
 	{
-		console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
-		fprintf( stderr, "ERROR: " );
-		console_reset( stderr );
-		fprintf( stderr, "Need to specify input OBJ file." );
-		printf( "\n" );
+		print_error( "Need to specify input OBJ file.\n" );
 		about( argc, argv );
 		status_code = -3;
 		goto done;
@@ -154,11 +139,7 @@ int main( int argc, char* argv[] )
 
 	if( !args.output_filename )
 	{
-		console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
-		fprintf( stderr, "ERROR: " );
-		console_reset( stderr );
-		fprintf( stderr, "Need to specify output JavaScript file." );
-		printf( "\n" );
+		print_error( "Need to specify output JavaScript file.\n" );
 		about( argc, argv );
 		status_code = -3;
 		goto done;
@@ -180,16 +161,23 @@ int main( int argc, char* argv[] )
 	{
 		obj_loader_t* ol = obj_loader_create_from_file( args.input_filename, false );
 
-		fprintf( out, "/* var vertex = {\n" );
-		fprintf( out, " *   x,\n" );
-		fprintf( out, " *   y,\n" );
-		fprintf( out, " *   z,\n" );
-		if( args.include & INCLUDE_TEXTURES )
+		const obj_vertex_t* vertices = obj_loader_vertices( ol );
+		const obj_texture_coord_t* texture_coords = obj_loader_texture_coords( ol );
+		const obj_normal_t* normals = obj_loader_normals( ol );
+
+		fprintf( out, "/* let vertex = {\n" );
+        if (obj_loader_vertices_count(ol) > 0 )
+        {
+            fprintf( out, " *   x,\n" );
+            fprintf( out, " *   y,\n" );
+            fprintf( out, " *   z,\n" );
+        }
+		if( (args.include & INCLUDE_TEXTURES) && obj_loader_texture_coords_count(ol) > 0)
 		{
 			fprintf( out, " *   u,\n" );
 			fprintf( out, " *   v,\n" );
 		}
-		if( args.include & INCLUDE_NORMALS )
+		if( (args.include & INCLUDE_NORMALS) && obj_loader_normals_count(ol) > 0 )
 		{
 			fprintf( out, " *   nx,\n" );
 			fprintf( out, " *   ny,\n" );
@@ -197,12 +185,8 @@ int main( int argc, char* argv[] )
 		}
 		fprintf( out, " * };\n" );
 		fprintf( out, " */\n" );
-		fprintf( out, "var %s = {\n", args.variable_name );
+		fprintf( out, "const %s = {\n", args.variable_name );
 
-
-		const obj_vertex_t* vertices = obj_loader_vertices( ol );
-		const obj_texture_coord_t* texture_coords = obj_loader_texture_coords( ol );
-		const obj_normal_t* normals = obj_loader_normals( ol );
 
 
 		const size_t group_count = obj_loader_group_count( ol );
@@ -212,15 +196,19 @@ int main( int argc, char* argv[] )
 			fprintf( out, "\t\"%s\": ", obj_group_name( group ) );
 			fprintf( out, "[\n" );
 
-			fprintf( out, "\t\t//%16s,%16s,%16s", "position-X", "position-Y", "position-Z");
+            if (obj_loader_vertices_count(ol) > 0 )
+            {
+			    fprintf( out, "\t\t//%16s,%16s,%16s", "position-X", "position-Y", "position-Z");
+            }
+
 			int divider_length = 50 + 8;
 
-			if( args.include & INCLUDE_TEXTURES )
+			if( (args.include & INCLUDE_TEXTURES) && obj_loader_texture_coords_count(ol) > 0 )
 			{
 				fprintf( out, ",%16s,%16s", "texture-U", "texture-V");
 				divider_length += 34;
 			}
-			if( args.include & INCLUDE_NORMALS )
+			if( (args.include & INCLUDE_NORMALS) && obj_loader_normals_count(ol) > 0 )
 			{
 				fprintf( out, ",%16s,%16s,%16s\n", "normal-X", "normal-Y", "normal-Z" );
 				divider_length += 50;
@@ -246,19 +234,21 @@ int main( int argc, char* argv[] )
 
 				for( size_t vi = 0; vi < v_index_count; vi++ )
 				{
-					const obj_vertex_t* v = &vertices[ v_indices[vi] ];
-					const obj_texture_coord_t* t = &texture_coords[ t_indices[vi] ];
-					const obj_normal_t* n = &normals[ n_indices[vi] ];
+                    if (obj_loader_vertices_count(ol) > 0 )
+                    {
+                        const obj_vertex_t* v = &vertices[ v_indices[vi] ];
+                        fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z );
+                    }
 
-					fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z );
-
-					if( args.include & INCLUDE_TEXTURES )
+					if( (args.include & INCLUDE_TEXTURES) && obj_loader_texture_coords_count(ol) > 0 )
 					{
+					    const obj_texture_coord_t* t = &texture_coords[ t_indices[vi] ];
 						fprintf( out, ",%+16.10f,%+16.10f", t->u, t->v);
 					}
 
-					if( args.include & INCLUDE_NORMALS )
+					if( (args.include & INCLUDE_NORMALS) && obj_loader_normals_count(ol) > 0 )
 					{
+					    const obj_normal_t* n = &normals[ n_indices[vi] ];
 						fprintf( out, ",%+16.10f,%+16.10f,%+16.10f", n->nx, n->ny, n->nz );
 					}
 
@@ -271,6 +261,13 @@ int main( int argc, char* argv[] )
 			fprintf( out, "%s\n", i != (group_count - 1) ? "," : "" );
 		}
 		fprintf( out, "};\n" );
+
+        // Export module if used from Node.js
+        fprintf( out, "\n// Export module if executing in Node.js\n");
+        fprintf( out, "if (typeof window === 'undefined') {\n");
+        fprintf( out, "\tmodule.exports = %s;\n", args.variable_name);
+        fprintf( out, "}\n");
+
 		fclose( out );
 	}
 
@@ -282,7 +279,7 @@ done:
 void about( int argc, char* argv[] )
 {
 	printf( "obj2js v%s\n", VERSION );
-	printf( "Copyright (c) 2016, Joe Marrero.\n\n");
+	printf( "Copyright (c) 2016, Joe Marrero. https://joemarrero.com/\n\n");
 
 	printf( "This tool will convert an Alias Wavefront OBJ model into Javascript\n" );
 	printf( "arrays that are suitable for loading directly with WebGL.\n\n");
@@ -300,4 +297,20 @@ void about( int argc, char* argv[] )
 
 
 	printf( "\n" );
+}
+
+void print_error(const char* format, ...)
+{
+    va_list args;
+    va_start( args, format );
+    #if defined(_WIN32) || defined(_WIN64)
+    fprintf( stderr, "ERROR: " );
+    vfprintf( stderr, format, args );
+    #else
+    console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
+    fprintf( stderr, "ERROR: " );
+    console_reset( stderr );
+    vfprintf( stderr, format, args );
+    #endif
+    va_end( args );
 }
