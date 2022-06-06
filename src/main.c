@@ -159,7 +159,7 @@ int main( int argc, char* argv[] )
 
 	if( out )
 	{
-		obj_loader_t* ol = obj_loader_create_from_file( args.input_filename, false );
+		obj_loader_t* ol = obj_loader_load( args.input_filename, false );
 
 		const obj_vertex_t* vertices = obj_loader_vertices( ol );
 		const obj_texture_coord_t* texture_coords = obj_loader_texture_coords( ol );
@@ -223,7 +223,7 @@ int main( int argc, char* argv[] )
 			const size_t faces_count = obj_group_faces_count( group );
 			for( size_t j = 0; j < faces_count; j++ )
 			{
-				const obj_face_t* face = obj_group_faces( group, j );
+				const obj_face_t* face = obj_group_face( group, j );
 
 				const size_t v_index_count = obj_face_vertex_indices_count( face );
 				const size_t* v_indices = obj_face_vertex_indices( face );
