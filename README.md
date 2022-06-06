@@ -5,12 +5,12 @@
 ## Command Line Arguments
 <pre>
 Command Line Options:
-     -i, --input               The input OBJ file.                               
-     -o, --output              The output Javascript file.                       
-     -v, --variable-name       The variable name for the JavaScript object.      
-    -xt, --exclude-textures    Exclude parsing of textures.                      
-    -xn, --exclude-normals     Exclude parsing of normals.                       
-     -h, --help                Show program usage.                               
+     -i, --input               The input OBJ file.
+     -o, --output              The output Javascript file.
+     -v, --variable-name       The variable name for the JavaScript object.
+    -xt, --exclude-textures    Exclude parsing of textures.
+    -xn, --exclude-normals     Exclude parsing of normals.
+     -h, --help                Show program usage.
 </pre>
 ## Example
 To convert a model of a submarine to a packed Javascript array, one can use the following command:
@@ -23,7 +23,7 @@ array that can be used as an interleaved buffer in WebGL.
 
 This is what the output will typically look like:
 <pre>
-var submarine = {
+export const submarine = {
 	"leftTorpedo": [
 		//      position-X,      position-Y,      position-Z,       texture-U,       texture-V,        normal-X,        normal-Y,        normal-Z
 
@@ -77,7 +77,7 @@ var submarine = {
 
 ## License
 <pre>
- Copyright (C) 2016 by Joseph A. Marrero. http://www.manvscode.com/
+ Copyright (C) 2016-2022 by Joseph A. Marrero. http://www.manvscode.com/
 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal

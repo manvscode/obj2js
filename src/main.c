@@ -29,7 +29,7 @@
 #include <xtd/string.h>
 #include <libobj.h>
 
-#define VERSION "1.2.0"
+#define VERSION "1.2.1"
 
 static void about( int argc, char* argv[] );
 static void print_error(const char* format, ...);
@@ -166,12 +166,12 @@ int main( int argc, char* argv[] )
 		const obj_normal_t* normals = obj_loader_normals( ol );
 
 		fprintf( out, "/* let vertex = {\n" );
-        if (obj_loader_vertices_count(ol) > 0 )
-        {
-            fprintf( out, " *   x,\n" );
-            fprintf( out, " *   y,\n" );
-            fprintf( out, " *   z,\n" );
-        }
+		if (obj_loader_vertices_count(ol) > 0 )
+		{
+			fprintf( out, " *   x,\n" );
+			fprintf( out, " *   y,\n" );
+			fprintf( out, " *   z,\n" );
+		}
 		if( (args.include & INCLUDE_TEXTURES) && obj_loader_texture_coords_count(ol) > 0)
 		{
 			fprintf( out, " *   u,\n" );
@@ -194,10 +194,10 @@ int main( int argc, char* argv[] )
 			fprintf( out, "\t\"%s\": ", obj_group_name( group ) );
 			fprintf( out, "[\n" );
 
-            if (obj_loader_vertices_count(ol) > 0 )
-            {
-			    fprintf( out, "\t\t//%16s,%16s,%16s", "position-X", "position-Y", "position-Z");
-            }
+			if (obj_loader_vertices_count(ol) > 0 )
+			{
+				fprintf( out, "\t\t//%16s,%16s,%16s", "position-X", "position-Y", "position-Z");
+			}
 
 			int divider_length = 50 + 8;
 
@@ -232,11 +232,11 @@ int main( int argc, char* argv[] )
 
 				for( size_t vi = 0; vi < v_index_count; vi++ )
 				{
-                    if (obj_loader_vertices_count(ol) > 0 )
-                    {
-                        const obj_vertex_t* v = &vertices[ v_indices[vi] ];
-                        fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z );
-                    }
+					if (obj_loader_vertices_count(ol) > 0 )
+					{
+						const obj_vertex_t* v = &vertices[ v_indices[vi] ];
+						fprintf( out, "\t\t  %+16.10f,%+16.10f,%+16.10f", v->x, v->y, v->z );
+					}
 
 					if( (args.include & INCLUDE_TEXTURES) && obj_loader_texture_coords_count(ol) > 0 )
 					{
@@ -260,11 +260,11 @@ int main( int argc, char* argv[] )
 		}
 		fprintf( out, "};\n" );
 
-        // Export module if used from Node.js
-        //fprintf( out, "\n// Export module if executing in Node.js\n");
-        //fprintf( out, "if (typeof window === 'undefined') {\n");
-        //fprintf( out, "\tmodule.exports = %s;\n", args.variable_name);
-        //fprintf( out, "}\n");
+		// Export module if used from Node.js
+		//fprintf( out, "\n// Export module if executing in Node.js\n");
+		//fprintf( out, "if (typeof window === 'undefined') {\n");
+		//fprintf( out, "\tmodule.exports = %s;\n", args.variable_name);
+		//fprintf( out, "}\n");
 
 		fclose( out );
 	}
@@ -299,16 +299,16 @@ void about( int argc, char* argv[] )
 
 void print_error(const char* format, ...)
 {
-    va_list args;
-    va_start( args, format );
-    #if defined(_WIN32) || defined(_WIN64)
-    fprintf( stderr, "ERROR: " );
-    vfprintf( stderr, format, args );
-    #else
-    console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
-    fprintf( stderr, "ERROR: " );
-    console_reset( stderr );
-    vfprintf( stderr, format, args );
-    #endif
-    va_end( args );
+	va_list args;
+	va_start( args, format );
+	#if defined(_WIN32) || defined(_WIN64)
+	fprintf( stderr, "ERROR: " );
+	vfprintf( stderr, format, args );
+	#else
+	console_fg_color_8( stderr, CONSOLE_COLOR8_RED );
+	fprintf( stderr, "ERROR: " );
+	console_reset( stderr );
+	vfprintf( stderr, format, args );
+	#endif
+	va_end( args );
 }
